@@ -276,17 +276,20 @@ export default function BikeDetails() {
               {buttonLabel}
             </button>
             <button
+              disabled={isSold}
               onClick={openChat}
-              className="w-full py-3 bg-green-600 text-white rounded-md"
+              className={`w-full py-3 text-white rounded-md ${isSold ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                }`}
             >
-              Chat With Seller
+              {isSold ? "Sold Out" : "Chat With Seller"}
             </button>
             <ChatModal
               isOpen={isChatOpen}
               onClose={() => setIsChatOpen(false)}
               bookingId={bookingId || localStorage.getItem("bikeBookingId")}
               senderType="BUYER"
-              chatType="BIKE" // or "CAR" depending on context
+              chatType="BIKE"
+              bookingStatus={bike.status}
             />
           </div>
         </div>

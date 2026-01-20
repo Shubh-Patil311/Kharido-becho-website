@@ -13,6 +13,11 @@ const SellerChatModal = ({
   bookingStatus,
 }) => {
   const [inputValue, setInputValue] = useState("");
+  const [status, setStatus] = useState(bookingStatus);
+
+  useEffect(() => {
+    setStatus(bookingStatus);
+  }, [bookingStatus]);
 
   // 🔥 Seller chat hook
   const { messages, loading, sending, error, sendMessage, acceptBooking, rejectBooking } =
@@ -47,7 +52,7 @@ const SellerChatModal = ({
   const handleReject = async () => {
     if (window.confirm("Are you sure you want to reject this booking?")) {
       await rejectBooking();
-      onClose();
+      setStatus("REJECTED");
     }
   };
   // console.log(messages, "MESSAGES ====");
@@ -70,11 +75,11 @@ const SellerChatModal = ({
           </div>
           <div>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-medium border ${statusStyles[bookingStatus] ||
+              className={`px-3 py-1 rounded-full text-xs font-medium border ${statusStyles[status] ||
                 "bg-gray-100 text-gray-600 border-gray-200 capitalize"
                 }`}
             >
-              {bookingStatuses[bookingStatus] || bookingStatus || "Unknown"}
+              {bookingStatuses[status] || status || "Unknown"}
             </span>
           </div>
           <button
@@ -127,43 +132,57 @@ const SellerChatModal = ({
         )}
 
         {/* INPUT AREA */}
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white px-4 py-3 border-t flex gap-3 items-center"
-        >
-          <input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 bg-gray-100 border-transparent focus:border-green-500 focus:bg-white focus:ring-0 rounded-full px-4 py-2.5 text-sm transition-all outline-none"
-            placeholder="Type your message..."
-          />
-          <button
-            disabled={sending || !inputValue.trim()}
-            className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all transform active:scale-95
-                ${sending || !inputValue.trim()
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg"}
-            `}
+        {/* INPUT AREA - Conditionally Rendered */}
+        {["SOLD", "REJECTED"].includes(status) ? (
+          <div className="bg-gray-100 px-4 py-4 border-t flex items-center justify-center">
+            <p className={`text-sm font-bold ${status === "SOLD" ? "text-green-600" : "text-red-600"
+              }`}>
+              {status === "SOLD"
+                ? "This item has been sold."
+                : "The product is rejected."}
+            </p>
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white px-4 py-3 border-t flex gap-3 items-center"
           >
-            {sending ? "..." : "Send"}
-          </button>
-        </form>
+            <input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              className="flex-1 bg-gray-100 border-transparent focus:border-green-500 focus:bg-white focus:ring-0 rounded-full px-4 py-2.5 text-sm transition-all outline-none"
+              placeholder="Type your message..."
+            />
+            <button
+              disabled={sending || !inputValue.trim()}
+              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all transform active:scale-95
+                  ${sending || !inputValue.trim()
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg"}
+              `}
+            >
+              {sending ? "..." : "Send"}
+            </button>
+          </form>
+        )}
 
         {/* BOTTOM ACTIONS (Accept/Reject) */}
-        <div className="bg-gray-50 px-4 py-3 border-t flex items-center justify-between gap-3">
-          <button
-            onClick={handleAccept}
-            className="flex-1 bg-white border border-green-600 text-green-700 hover:bg-green-50 text-sm py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
-          >
-            Accept Request
-          </button>
-          <button
-            onClick={handleReject}
-            className="flex-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-sm py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
-          >
-            Reject
-          </button>
-        </div>
+        {["PENDING", "IN_NEGOTIATION"].includes(status) && (
+          <div className="bg-gray-50 px-4 py-3 border-t flex items-center justify-between gap-3">
+            <button
+              onClick={handleAccept}
+              className="flex-1 bg-white border border-green-600 text-green-700 hover:bg-green-50 text-sm py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
+            >
+              Accept Request
+            </button>
+            <button
+              onClick={handleReject}
+              className="flex-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-sm py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
+            >
+              Reject
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
