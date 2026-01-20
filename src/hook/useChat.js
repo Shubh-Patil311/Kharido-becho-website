@@ -40,6 +40,7 @@ export default function useChat(bookingId) {
           }));
 
           setMessages(formattedMessages);
+          setStatus(booking?.status || ""); // Set the status
           setError(null);
         }
       } catch (err) {
@@ -126,6 +127,21 @@ export default function useChat(bookingId) {
     [bookingId]
   );
 
+  // Find the current booking status from the loaded messages (if we had access to the full booking object locally)
+  // Since we only set 'messages' state, we might need another state for status or re-derive it if we kept the booking object.
+  // For now, let's assume we want to return the status so ChatModal can use it.
+  // But wait, we only stored 'messages'.
+  // Let's improve the hook to store the 'status' as well.
+
+  const [status, setStatus] = useState("");
+
+  // Update the load function to set status
+  // We need to re-copy the useEffect logic to include setStatus, or better, just use multi_replace to inject 'setStatus' logic inside useEffect.
+  // However, simpler for now is to just return what we have, but to do it properly I should update the state.
+  // Let's return status from state, and I will update the useEffect in a separate call or use multi_replace for the whole file if needed.
+  // Actually, I can use replace_file_content to replace the return statement and ADD the state variable at the top? No, that's two places.
+  // I will use multi_replace_file_content for this file.
+
   return {
     messages,
     loading,
@@ -133,5 +149,6 @@ export default function useChat(bookingId) {
     error,
     sendMessage,
     setMessages,
+    status,
   };
 }
