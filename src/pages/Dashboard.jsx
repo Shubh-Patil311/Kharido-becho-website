@@ -523,6 +523,7 @@ import { toast } from "react-toastify";
 
 // Shared Component
 import DashboardStats from "../components/Dashboard/DashboardStats";
+import LiveProductsSection from "../components/LiveProducts/LiveProductsSection";
 
 // SERVICES
 import {
@@ -625,7 +626,7 @@ export default function Dashboard() {
     }
   }, [sellerId]);
 
-  // ----------------------------------------------------------------------
+  // ------------------------
   // FETCH ON CATEGORY CHANGE
   useEffect(() => {
     if (!sellerId) return;
@@ -759,17 +760,20 @@ export default function Dashboard() {
       />
 
       {/* CATEGORY TABS */}
-      <div className="flex gap-3 my-6">
-        {["LAPTOPS", "BIKES", "CARS", "MOBILES"].map((cat) => (
+      <div className="flex gap-3 my-6 flex-wrap">
+        {["LAPTOPS", "BIKES", "CARS", "MOBILES", "LIVE PRODUCTS"].map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`px-5 py-2 rounded-md font-semibold ${
+            className={`px-5 py-2 rounded-md font-semibold transition-all ${
               activeCategory === cat
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-200 text-gray-800"
+                ? cat === "LIVE PRODUCTS"
+                  ? "bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-lg"
+                  : "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
             }`}
           >
+            {cat === "LIVE PRODUCTS" && "🔴 "}
             {cat}
           </button>
         ))}
@@ -807,6 +811,9 @@ export default function Dashboard() {
           onDelete={handleDeleteMobile}
         />
       )}
+
+      {/* LIVE PRODUCTS SECTION */}
+      {activeCategory === "LIVE PRODUCTS" && <LiveProductsSection />}
     </div>
   );
 }
