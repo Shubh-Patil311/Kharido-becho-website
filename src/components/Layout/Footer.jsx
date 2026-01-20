@@ -67,7 +67,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  to="/laptops"
+                  to="/buy/laptops"
                   className="text-gray-400 hover:text-green-400 transition-colors block"
                 >
                   Laptops
@@ -75,7 +75,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="/bikes"
+                  to="/buy/bikes"
                   className="text-gray-400 hover:text-green-400 transition-colors block"
                 >
                   Bikes
@@ -83,7 +83,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="/mobiles"
+                  to="/buy/mobiles"
                   className="text-gray-400 hover:text-green-400 transition-colors block"
                 >
                   Mobiles
@@ -91,7 +91,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="/cars"
+                  to="/buy/cars"
                   className="text-gray-400 hover:text-green-400 transition-colors block"
                 >
                   Cars
