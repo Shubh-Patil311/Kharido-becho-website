@@ -121,21 +121,14 @@ export default function Navbar() {
           </button>
 
           {/* SELL BUTTON */}
-          {isSeller || isBuyer ? (
+          {!isSeller && (
             <Link
-              to="/dashboard"
+              to="/login"
               className="flex items-center justify-center bg-white border-t-4 border-t-cyan-400 border-r-4 border-r-blue-700 border-b-4 border-b-blue-700 border-l-4 border-l-yellow-400 rounded-full px-5 py-1 shadow-md hover:shadow-lg transition-shadow active:scale-95"
             >
               <span className="font-extrabold text-black mr-1 text-lg">+</span>
               <span className="font-bold text-blue-800 tracking-wide text-sm">SELL</span>
             </Link>
-          ) : (
-            <button
-              className="bg-gray-100 text-gray-400 font-semibold py-2 px-6 rounded-full text-sm cursor-not-allowed border border-gray-200"
-              disabled
-            >
-              + SELL
-            </button>
           )}
 
           {/* REQUEST BUTTON - BUYERS ONLY */}
@@ -181,21 +174,14 @@ export default function Navbar() {
         {/* MOBILE MENU BUTTONS */}
         <div className="flex sm:hidden items-center gap-3 ml-auto">
           {/* SELL - MOBILE */}
-          {isSeller || isBuyer ? (
+          {!isSeller && (
             <Link
-              to="/dashboard"
+              to="/login"
               className="flex items-center justify-center bg-white border-t-[3px] border-t-cyan-400 border-r-[3px] border-r-blue-700 border-b-[3px] border-b-blue-700 border-l-[3px] border-l-yellow-400 rounded-full px-3 py-0.5 shadow-sm active:scale-95"
             >
               <span className="font-extrabold text-black mr-0.5 text-sm">+</span>
               <span className="font-bold text-blue-800 text-xs">SELL</span>
             </Link>
-          ) : (
-            <button
-              className="bg-gray-100 text-gray-400 font-semibold py-1 px-3 rounded-full text-xs cursor-not-allowed border border-gray-200"
-              disabled
-            >
-              SELL
-            </button>
           )}
 
           {/* REQUEST - MOBILE (Buyers only) */}
