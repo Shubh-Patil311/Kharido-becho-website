@@ -17,8 +17,8 @@ export const useLiveAuction = (productType) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      toast.error("Please login to view live auctions");
       setLoading(false);
+      // Don't show error toast if user is not logged in - they might be browsing
       return;
     }
 
@@ -29,18 +29,58 @@ export const useLiveAuction = (productType) => {
     }
     socketRef.current = socket;
 
+    let connectionTimeout;
+    let hasShownError = false;
+
     socket.on("connect", () => {
       setConnected(true);
-      console.log("Connected to live auction socket");
+      hasShownError = false;
+      clearTimeout(connectionTimeout);
+      console.log("✅ Connected to live auction socket");
       
       // Join room for product type
       socket.emit("join-live-auctions", { productType });
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", (reason) => {
       setConnected(false);
-      console.log("Disconnected from live auction socket");
+      if (reason !== "io client disconnect") {
+        console.log("⚠️ Disconnected from live auction socket:", reason);
+      }
     });
+
+    // Handle connection errors gracefully
+    socket.on("connect_error", (error) => {
+      // Only show error once, not on every retry
+      if (!hasShownError) {
+        hasShownError = true;
+        const errorMsg = error.message || error.toString();
+        
+        // Check if backend is not running
+        if (errorMsg.includes("websocket error") || 
+            errorMsg.includes("TransportError") ||
+            errorMsg.includes("ECONNREFUSED") ||
+            errorMsg.includes("Failed to fetch")) {
+          // Backend is likely not running - don't show error toast, just log
+          console.warn("⚠️ Live auction server unavailable. Backend may not be running.");
+          setLoading(false);
+        } else if (errorMsg.includes("Authentication") || errorMsg.includes("credentials")) {
+          // Authentication issue
+          console.warn("⚠️ Authentication required for live auctions");
+          setLoading(false);
+        }
+      }
+    });
+
+    // Set timeout to stop loading if connection takes too long
+    connectionTimeout = setTimeout(() => {
+      if (!socket.connected) {
+        setLoading(false);
+        if (!hasShownError) {
+          console.warn("⚠️ Live auction connection timeout. Backend may not be running.");
+        }
+      }
+    }, 5000);
 
     // Listen for live products list
     socket.on("live-products", (products) => {
@@ -109,11 +149,25 @@ export const useLiveAuction = (productType) => {
       );
     });
 
-    // Request initial live products
-    socket.emit("get-live-products", { productType });
-    setLoading(false);
+    // Request initial live products only if connected
+    let tryEmitTimeout = null;
+    if (socket.connected) {
+      socket.emit("get-live-products", { productType });
+    } else {
+      // If not connected, wait a bit then try
+      tryEmitTimeout = setTimeout(() => {
+        if (socketRef.current?.connected) {
+          socketRef.current.emit("get-live-products", { productType });
+        } else {
+          setLoading(false);
+        }
+      }, 2000);
+    }
 
+    // Cleanup function
     return () => {
+      if (tryEmitTimeout) clearTimeout(tryEmitTimeout);
+      if (connectionTimeout) clearTimeout(connectionTimeout);
       if (socketRef.current) {
         socketRef.current.emit("leave-live-auctions", { productType });
         socketRef.current.off("live-products");
@@ -121,6 +175,9 @@ export const useLiveAuction = (productType) => {
         socketRef.current.off("product-auction-ended");
         socketRef.current.off("bid-updated");
         socketRef.current.off("auction-winner");
+        socketRef.current.off("connect");
+        socketRef.current.off("disconnect");
+        socketRef.current.off("connect_error");
       }
     };
   }, [productType]);

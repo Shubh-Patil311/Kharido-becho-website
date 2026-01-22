@@ -337,8 +337,9 @@
 
 
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
+import { MdArrowBack } from "react-icons/md";
 import { useAuth } from "../../context/AuthContext";
 import { logoutUser } from "../../store/services/authServices";
 import { toast } from "react-toastify";
@@ -347,15 +348,19 @@ import logo from "../../assets/logo.png";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ONLY use values that exist in AuthContext
   const { isSignedIn, roles, signOut } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [location, setLocation] = useState("India");
+  const [userLocation, setUserLocation] = useState("India");
 
   const isSeller = roles.includes("SELLER");
   const isBuyer = roles.includes("BUYER") || roles.includes("USER");
+  
+  // Check if we can go back (not on home page)
+  const canGoBack = location.pathname !== "/";
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -533,6 +538,17 @@ export default function Navbar() {
       {/* DESKTOP CATEGORY LINKS */}
       <div className="bg-gray-50 border-t hidden md:block">
         <div className="container mx-auto px-4 h-12 flex items-center space-x-6 text-sm">
+          {/* BACK BUTTON - Red circular with arrow */}
+          {canGoBack && (
+            <button
+              onClick={() => navigate(-1)}
+              className="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-md hover:shadow-lg"
+              title="Go Back"
+            >
+              <MdArrowBack className="text-lg" />
+            </button>
+          )}
+
           {/* BUYER LINKS */}
           {!isSeller && (
             <>
@@ -564,9 +580,12 @@ export default function Navbar() {
                 LAPTOPS
               </button>
 
-
-
-
+              <button
+                onClick={() => handleNavigate("/buy/products")}
+                className="hover:text-red-600 font-bold text-red-500"
+              >
+                🔴 LIVE AUCTIONS
+              </button>
             </>
           )}
 
@@ -611,8 +630,8 @@ export default function Navbar() {
             <div>
               <label className="text-xs text-gray-500">Location</label>
               <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                value={userLocation}
+                onChange={(e) => setUserLocation(e.target.value)}
                 className="border rounded-md py-1.5 px-2 text-xs w-full"
               >
                 <option>India</option>
@@ -620,6 +639,17 @@ export default function Navbar() {
                 <option>Delhi</option>
               </select>
             </div>
+            
+            {/* BACK BUTTON - MOBILE */}
+            {canGoBack && (
+              <button
+                onClick={() => navigate(-1)}
+                className="w-10 h-10 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-md"
+                title="Go Back"
+              >
+                <MdArrowBack className="text-xl" />
+              </button>
+            )}
 
             <div className="flex flex-col space-y-2">
               {!isSeller && (
@@ -635,6 +665,12 @@ export default function Navbar() {
                   </button>
                   <button onClick={() => handleNavigate("/buy/laptops")}>
                     Laptops
+                  </button>
+                  <button 
+                    onClick={() => handleNavigate("/buy/products")}
+                    className="text-red-600 font-semibold"
+                  >
+                    🔴 Live Auctions
                   </button>
                   <button onClick={() => handleNavigate("/buyer/chat")}>
                     Requests

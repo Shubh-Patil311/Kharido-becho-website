@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
   MdDirectionsCar,
@@ -10,7 +10,11 @@ import {
   MdPerson,
   MdAttachMoney,
   MdTrendingUp,
+  MdAdd,
+  MdRemove,
+  MdShoppingCart,
 } from "react-icons/md";
+import { useAuth } from "../../context/AuthContext";
 
 /**
  * Live Product Card Component
@@ -22,10 +26,13 @@ export default function LiveProductCard({
   onPlaceBid,
   topBids = [],
   winner = null,
+  isSeller = false,
 }) {
+  const { roles } = useAuth();
   const [bidAmount, setBidAmount] = useState("");
   const [showBidModal, setShowBidModal] = useState(false);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
+  const [inCart, setInCart] = useState(false);
 
   // Get product ID based on type
   const getProductId = () => {
@@ -35,6 +42,32 @@ export default function LiveProductCard({
     if (product.laptopId) return product.laptopId;
     return product.id;
   };
+
+  // Get current price
+  const getCurrentPrice = () => {
+    return product.currentBid || product.startingBid || product.price || product.prize || 0;
+  };
+
+  // Check if user is seller
+  const userIsSeller = isSeller || (roles && roles.includes("SELLER") && !roles.includes("BUYER"));
+
+  // Initialize bid amount to minimum when modal opens
+  useEffect(() => {
+    if (showBidModal) {
+      const currentPrice = getCurrentPrice();
+      setBidAmount(String(currentPrice + 1000));
+    }
+  }, [showBidModal]);
+
+  // Check if product is in cart (from localStorage)
+  useEffect(() => {
+    const cart = JSON.parse(localStorage.getItem("liveAuctionCart") || "[]");
+    const productId = getProductId();
+    const exists = cart.some(
+      (item) => item.productId === productId && item.productType === productType
+    );
+    setInCart(exists);
+  }, [productType, product]);
 
   // Get product image
   const getProductImage = () => {
@@ -47,11 +80,6 @@ export default function LiveProductCard({
   // Get product name
   const getProductName = () => {
     return `${product.brand || ""} ${product.model || ""}`.trim();
-  };
-
-  // Get current price
-  const getCurrentPrice = () => {
-    return product.currentBid || product.startingBid || product.price || product.prize || 0;
   };
 
   // Get product icon based on type
@@ -68,6 +96,20 @@ export default function LiveProductCard({
       default:
         return <MdGavel className="text-2xl" />;
     }
+  };
+
+  // Handle plus button (add 1000rs)
+  const handlePlus = () => {
+    const currentPrice = getCurrentPrice();
+    const newAmount = Number(bidAmount) + 1000;
+    setBidAmount(String(newAmount));
+  };
+
+  // Handle minus button (subtract 1000rs, but not less than minimum)
+  const handleMinus = () => {
+    const currentPrice = getCurrentPrice();
+    const newAmount = Math.max(Number(bidAmount) - 1000, currentPrice + 1);
+    setBidAmount(String(newAmount));
   };
 
   // Handle bid placement
@@ -96,6 +138,50 @@ export default function LiveProductCard({
     } finally {
       setIsPlacingBid(false);
     }
+  };
+
+  // Handle add to cart
+  const handleAddToCart = () => {
+    const cart = JSON.parse(localStorage.getItem("liveAuctionCart") || "[]");
+    const productId = getProductId();
+    
+    const cartItem = {
+      productId,
+      productType,
+      productName: getProductName(),
+      currentBid: getCurrentPrice(),
+      imageUrl: getProductImage(),
+      product: product,
+    };
+
+    // Check if already in cart
+    const exists = cart.some(
+      (item) => item.productId === productId && item.productType === productType
+    );
+
+    if (exists) {
+      toast.info("Product already in cart");
+      return;
+    }
+
+    cart.push(cartItem);
+    localStorage.setItem("liveAuctionCart", JSON.stringify(cart));
+    setInCart(true);
+    toast.success("Added to cart!");
+  };
+
+  // Handle remove from cart
+  const handleRemoveFromCart = () => {
+    const cart = JSON.parse(localStorage.getItem("liveAuctionCart") || "[]");
+    const productId = getProductId();
+    
+    const updatedCart = cart.filter(
+      (item) => !(item.productId === productId && item.productType === productType)
+    );
+    
+    localStorage.setItem("liveAuctionCart", JSON.stringify(updatedCart));
+    setInCart(false);
+    toast.success("Removed from cart");
   };
 
   const productId = getProductId();
@@ -244,15 +330,35 @@ export default function LiveProductCard({
           </div>
         )}
 
-        {/* Bid Button */}
+        {/* Action Buttons */}
         {!isAuctionEnded && (
-          <button
-            onClick={() => setShowBidModal(true)}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-          >
-            <MdGavel />
-            Place Bid
-          </button>
+          <div className="space-y-2">
+            {/* Bid Button - Only for buyers */}
+            {!userIsSeller && (
+              <button
+                onClick={() => setShowBidModal(true)}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              >
+                <MdGavel />
+                Place Bid
+              </button>
+            )}
+            
+            {/* Cart Button - Only for buyers */}
+            {!userIsSeller && (
+              <button
+                onClick={inCart ? handleRemoveFromCart : handleAddToCart}
+                className={`w-full py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                  inCart
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-green-500 hover:bg-green-600 text-white"
+                }`}
+              >
+                <MdShoppingCart />
+                {inCart ? "Remove from Cart" : "Add to Cart"}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -273,18 +379,45 @@ export default function LiveProductCard({
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Your Bid Amount (₹)
               </label>
-              <input
-                type="number"
-                value={bidAmount}
-                onChange={(e) => setBidAmount(e.target.value)}
-                placeholder={`Min: ₹${(currentPrice + 1).toLocaleString()}`}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-lg"
-                min={currentPrice + 1}
-                step="100"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Minimum bid: ₹{(currentPrice + 1).toLocaleString()}
-              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleMinus}
+                  disabled={Number(bidAmount) <= currentPrice + 1}
+                  className="px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <MdRemove />
+                </button>
+                <input
+                  type="number"
+                  value={bidAmount}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const numVal = Number(val);
+                    const minVal = currentPrice + 1;
+                    if (val === "" || (numVal >= minVal)) {
+                      setBidAmount(val);
+                    }
+                  }}
+                  placeholder={`Min: ₹${(currentPrice + 1).toLocaleString()}`}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-lg text-center"
+                  min={currentPrice + 1}
+                  step="1000"
+                />
+                <button
+                  onClick={handlePlus}
+                  className="px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                >
+                  <MdAdd />
+                </button>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500">
+                  Minimum bid: ₹{(currentPrice + 1).toLocaleString()}
+                </p>
+                <p className="text-xs text-blue-600 font-semibold">
+                  Increment: ₹1,000
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-3">

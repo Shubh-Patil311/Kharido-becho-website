@@ -2,13 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useLiveAuction } from "../../socketio/useLiveAuction";
 import LiveProductCard from "./LiveProductCard";
 import { MdDirectionsCar, MdTwoWheeler, MdPhoneIphone, MdLaptop } from "react-icons/md";
+import { useAuth } from "../../context/AuthContext";
 
 /**
  * Live Products Section Component
  * Displays live auction products organized by category
  */
 export default function LiveProductsSection() {
+  const { roles } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("ALL");
+  
+  // Check if user is seller
+  const isSeller = roles && roles.includes("SELLER") && !roles.includes("BUYER");
 
   const categories = [
     { id: "ALL", label: "All Products", icon: null },
@@ -145,7 +150,9 @@ export default function LiveProductsSection() {
         ) : (
           <div className="flex items-center gap-2 text-orange-600">
             <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
-            <span className="text-sm font-semibold">Connecting to Live Auctions...</span>
+            <span className="text-sm font-semibold">
+              {isLoading ? "Connecting to Live Auctions..." : "Live Auctions Unavailable (Backend may not be running)"}
+            </span>
           </div>
         )}
       </div>
@@ -199,6 +206,7 @@ export default function LiveProductsSection() {
                 onPlaceBid={getPlaceBidFunction(productType)}
                 topBids={topBids}
                 winner={winner}
+                isSeller={isSeller}
               />
             );
           })}

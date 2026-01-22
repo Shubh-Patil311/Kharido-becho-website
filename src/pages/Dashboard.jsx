@@ -540,6 +540,8 @@ import {
   deleteMobile,
 } from "../store/services/mobileServices";
 
+import { setProductLive } from "../store/services/auctionServices";
+
 const STATUS_FILTERS = ["ACTIVE", "PENDING", "SOLD"];
 
 // ----------------------------------------------------------------------
@@ -731,6 +733,83 @@ export default function Dashboard() {
   };
 
   // ----------------------------------------------------------------------
+  // SET PRODUCT FOR AUCTION HANDLERS
+  // ----------------------------------------------------------------------
+
+  const handleSetAuction = async (item, productType) => {
+    let productId;
+    let productName = "";
+
+    // Get product ID and name based on type
+    switch (productType) {
+      case "LAPTOP":
+        productId = item.laptopId ?? item.id ?? item.laptop_id;
+        productName = `${item.brand} ${item.model}`;
+        break;
+      case "BIKE":
+        productId = item.bike_id ?? item.id ?? item.bikeId;
+        productName = `${item.brand} ${item.model}`;
+        break;
+      case "CAR":
+        productId = item.carId ?? item.id ?? item.car_id;
+        productName = `${item.brand} ${item.model}`;
+        break;
+      case "MOBILE":
+        productId = item.mobileId ?? item.id ?? item.mobile_id;
+        productName = `${item.brand} ${item.model}`;
+        break;
+      default:
+        toast.error("Invalid product type");
+        return;
+    }
+
+    if (!productId) {
+      toast.error("Product ID missing");
+      return;
+    }
+
+    // Get auction details from user
+    const startingBid = prompt(
+      `Set starting bid for ${productName}:\n(Enter amount in ₹)`,
+      item.price || item.prize || "10000"
+    );
+
+    if (!startingBid || isNaN(Number(startingBid)) || Number(startingBid) <= 0) {
+      toast.error("Invalid starting bid amount");
+      return;
+    }
+
+    const durationHours = prompt(
+      `Set auction duration:\n(Enter hours, e.g., 24 for 24 hours)`,
+      "24"
+    );
+
+    if (!durationHours || isNaN(Number(durationHours)) || Number(durationHours) <= 0) {
+      toast.error("Invalid duration");
+      return;
+    }
+
+    try {
+      const auctionData = {
+        startingBid: Number(startingBid),
+        durationHours: Number(durationHours),
+      };
+
+      await setProductLive(productId, productType, auctionData);
+      toast.success(`${productName} is now live for auction!`);
+      
+      // Refresh the appropriate list
+      if (activeCategory === "LAPTOPS") fetchLaptops();
+      if (activeCategory === "BIKES") fetchBikes();
+      if (activeCategory === "CARS") fetchCars();
+      if (activeCategory === "MOBILES") fetchMobiles();
+    } catch (error) {
+      console.error("Error setting product live:", error);
+      toast.error("Failed to set product for auction");
+    }
+  };
+
+  // ----------------------------------------------------------------------
   // UI --------------------------------------------------------------------
 
   return (
@@ -785,6 +864,7 @@ export default function Dashboard() {
           items={laptops}
           onEdit={goToEditLaptop}
           onDelete={handleDeleteLaptop}
+          onSetAuction={(item) => handleSetAuction(item, "LAPTOP")}
         />
       )}
 
@@ -793,6 +873,7 @@ export default function Dashboard() {
           items={bikes}
           onEdit={goToEditBike}
           onDelete={handleDeleteBike}
+          onSetAuction={(item) => handleSetAuction(item, "BIKE")}
         />
       )}
 
@@ -801,6 +882,7 @@ export default function Dashboard() {
           items={cars}
           onEdit={goToEditCar}
           onDelete={handleDeleteCar}
+          onSetAuction={(item) => handleSetAuction(item, "CAR")}
         />
       )}
 
@@ -809,6 +891,7 @@ export default function Dashboard() {
           items={mobiles}
           onEdit={goToEditMobile}
           onDelete={handleDeleteMobile}
+          onSetAuction={(item) => handleSetAuction(item, "MOBILE")}
         />
       )}
 
@@ -849,6 +932,8 @@ function ActionBtn({ children, onClick, color }) {
   const cls =
     color === "blue"
       ? "bg-blue-600 hover:bg-blue-700"
+      : color === "green"
+      ? "bg-green-600 hover:bg-green-700"
       : "bg-red-600 hover:bg-red-700";
 
   return (
@@ -865,7 +950,7 @@ function ActionBtn({ children, onClick, color }) {
 // LAPTOP TABLE
 // ----------------------------------------------------------------------
 
-function LaptopTable({ items, onEdit, onDelete }) {
+function LaptopTable({ items, onEdit, onDelete, onSetAuction }) {
   return (
     <CategoryWrapper title="Laptop Listings">
       {items.length === 0 ? (
@@ -896,6 +981,11 @@ function LaptopTable({ items, onEdit, onDelete }) {
                   <ActionBtn onClick={() => onDelete(l)} color="red">
                     Delete
                   </ActionBtn>
+                  {onSetAuction && (
+                    <ActionBtn onClick={() => onSetAuction(l)} color="green">
+                      Set Auction
+                    </ActionBtn>
+                  )}
                 </Td>
               </tr>
             ))}
@@ -910,7 +1000,7 @@ function LaptopTable({ items, onEdit, onDelete }) {
 // BIKE TABLE
 // ----------------------------------------------------------------------
 
-function BikeTable({ items, onEdit, onDelete }) {
+function BikeTable({ items, onEdit, onDelete, onSetAuction }) {
   return (
     <CategoryWrapper title="Bike Listings">
       {items.length === 0 ? (
@@ -943,6 +1033,11 @@ function BikeTable({ items, onEdit, onDelete }) {
                   <ActionBtn onClick={() => onDelete(b)} color="red">
                     Delete
                   </ActionBtn>
+                  {onSetAuction && (
+                    <ActionBtn onClick={() => onSetAuction(b)} color="green">
+                      Set Auction
+                    </ActionBtn>
+                  )}
                 </Td>
               </tr>
             ))}
@@ -957,7 +1052,7 @@ function BikeTable({ items, onEdit, onDelete }) {
 // CAR TABLE
 // ----------------------------------------------------------------------
 
-function CarTable({ items, onEdit, onDelete }) {
+function CarTable({ items, onEdit, onDelete, onSetAuction }) {
   return (
     <CategoryWrapper title="Car Listings">
       {items.length === 0 ? (
@@ -988,6 +1083,11 @@ function CarTable({ items, onEdit, onDelete }) {
                   <ActionBtn onClick={() => onDelete(c)} color="red">
                     Delete
                   </ActionBtn>
+                  {onSetAuction && (
+                    <ActionBtn onClick={() => onSetAuction(c)} color="green">
+                      Set Auction
+                    </ActionBtn>
+                  )}
                 </Td>
               </tr>
             ))}
@@ -1002,7 +1102,7 @@ function CarTable({ items, onEdit, onDelete }) {
 // MOBILE TABLE
 // ----------------------------------------------------------------------
 
-function MobileTable({ items, onEdit, onDelete }) {
+function MobileTable({ items, onEdit, onDelete, onSetAuction }) {
   return (
     <CategoryWrapper title="Mobile Listings">
       {items.length === 0 ? (
@@ -1033,6 +1133,11 @@ function MobileTable({ items, onEdit, onDelete }) {
                   <ActionBtn onClick={() => onDelete(m)} color="red">
                     Delete
                   </ActionBtn>
+                  {onSetAuction && (
+                    <ActionBtn onClick={() => onSetAuction(m)} color="green">
+                      Set Auction
+                    </ActionBtn>
+                  )}
                 </Td>
               </tr>
             ))}

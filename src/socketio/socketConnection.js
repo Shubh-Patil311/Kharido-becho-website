@@ -30,11 +30,29 @@ export const initializeSocket = (token) => {
   });
 
   socket.on("disconnect", (reason) => {
-    console.log("❌ Socket.IO Disconnected:", reason);
+    // Only log disconnect if it's not a normal close
+    if (reason !== "io client disconnect") {
+      console.log("⚠️ Socket.IO Disconnected:", reason);
+    }
   });
 
   socket.on("connect_error", (error) => {
-    console.error("❌ Socket.IO Connection Error:", error);
+    // Suppress duplicate error logs - only log once per connection attempt
+    // The native WebSocket error will still show in browser console, but we handle it here
+    if (error.message && !error.message.includes("xhr poll error")) {
+      // Only log meaningful errors, not every retry attempt
+      const errorMsg = error.message || error.toString();
+      
+      // Check if it's an authentication error
+      if (errorMsg.includes("Authentication") || errorMsg.includes("credentials")) {
+        console.warn("⚠️ Socket.IO: Authentication required or backend not running");
+      } else if (errorMsg.includes("websocket error") || errorMsg.includes("TransportError")) {
+        // This is the WebSocket transport error - backend likely not running
+        console.warn("⚠️ Socket.IO: Backend server not available. Live features will be disabled.");
+      } else {
+        console.warn("⚠️ Socket.IO Connection Error:", errorMsg);
+      }
+    }
   });
 
   return socket;
