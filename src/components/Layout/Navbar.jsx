@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 // import React, { useState } from "react";
 // import { Link, useNavigate } from "react-router-dom";
@@ -340,11 +341,18 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import { MdArrowBack } from "react-icons/md";
+=======
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaUserCircle, FaMapMarkerAlt, FaChevronDown, FaSearch } from "react-icons/fa";
+>>>>>>> 06152030be7f64af445bd3d34f6645d718696d47
 import { useAuth } from "../../context/AuthContext";
 import { logoutUser } from "../../store/services/authServices";
 import { toast } from "react-toastify";
 import axios from "axios";
 import logo from "../../assets/logo.png";
+
+import { getLocationStates } from "../../store/services/bikeBrandServices";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -354,7 +362,28 @@ export default function Navbar() {
   const { isSignedIn, roles, signOut } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+<<<<<<< HEAD
   const [userLocation, setUserLocation] = useState("India");
+=======
+  const [location, setLocation] = useState("India");
+  const [states, setStates] = useState([]);
+
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const res = await getLocationStates();
+        if (Array.isArray(res)) {
+          setStates(res);
+        } else if (res?.status === "success") {
+          setStates(res.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch states", error);
+      }
+    };
+    fetchStates();
+  }, []);
+>>>>>>> 06152030be7f64af445bd3d34f6645d718696d47
 
   const isSeller = roles.includes("SELLER");
   const isBuyer = roles.includes("BUYER") || roles.includes("USER");
@@ -394,15 +423,47 @@ export default function Navbar() {
         </Link>
 
         {/* SEARCH BOX - DESKTOP */}
-        <div className="hidden md:flex flex-1 items-center">
-          <input
-            type="text"
-            placeholder="Search"
-            className="flex-1 border rounded-l-md py-2 px-3 text-sm outline-none"
-          />
-          <button className="bg-blue-300 hover:bg-blue-700 text-white py-2 px-4 rounded-r-md text-sm">
-            🔍
-          </button>
+        {/* SEARCH BOX - DESKTOP */}
+        <div className="hidden md:flex flex-1 items-center mx-6 gap-4">
+
+          {/* Location Dropdown - Pill Shape */}
+          <div className="relative flex items-center w-64">
+            {/* Icon */}
+            <div className="absolute left-3 z-10 text-blue-600 text-lg">
+              <FaMapMarkerAlt />
+            </div>
+
+            <select
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="w-full h-12 pl-10 pr-10 border-2 border-gray-200 rounded-full text-base focus:outline-none focus:border-blue-400 bg-white text-gray-800 cursor-pointer appearance-none font-semibold truncate"
+            >
+              <option value="India">India</option>
+              {states.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+
+            {/* Custom Chevron */}
+            <div className="absolute right-4 pointer-events-none text-gray-400">
+              <FaChevronDown />
+            </div>
+          </div>
+
+          {/* Search Bar - Pill Shape */}
+          <div className="flex flex-1 items-center border-2 border-gray-200 rounded-full bg-white h-12 pr-1 focus-within:border-blue-400 w-full overflow-hidden">
+            <input
+              type="text"
+              placeholder="Find Cars, Mobile Phones and more..."
+              className="flex-1 px-5 h-full outline-none text-base text-gray-700 bg-transparent placeholder-gray-500"
+            />
+            <button className="bg-[#002f34] hover:bg-blue-900 text-white h-10 w-10 rounded-full flex items-center justify-center transition-colors">
+              <FaSearch className="text-lg" />
+            </button>
+          </div>
+
         </div>
 
         {/* RIGHT SIDE - DESKTOP */}
@@ -413,20 +474,14 @@ export default function Navbar() {
           </button>
 
           {/* SELL BUTTON */}
-          {isSeller ? (
+          {!isSeller && (
             <Link
-              to="/dashboard"
-              className="bg-yellow-200 hover:bg-yellow-500 text-gray-900 font-semibold py-2 px-4 rounded-md text-sm"
+              to="/login"
+              className="flex items-center justify-center bg-white border-t-4 border-t-cyan-400 border-r-4 border-r-blue-700 border-b-4 border-b-blue-700 border-l-4 border-l-yellow-400 rounded-full px-5 py-1 shadow-md hover:shadow-lg transition-shadow active:scale-95"
             >
-              + SELL
+              <span className="font-extrabold text-black mr-1 text-lg">+</span>
+              <span className="font-bold text-blue-800 tracking-wide text-sm">SELL</span>
             </Link>
-          ) : (
-            <button
-              className="bg-yellow-100 text-gray-400 font-semibold py-2 px-4 rounded-md text-sm cursor-not-allowed"
-              disabled
-            >
-              + SELL
-            </button>
           )}
 
           {/* REQUEST BUTTON - BUYERS ONLY */}
@@ -472,20 +527,14 @@ export default function Navbar() {
         {/* MOBILE MENU BUTTONS */}
         <div className="flex sm:hidden items-center gap-3 ml-auto">
           {/* SELL - MOBILE */}
-          {isSeller ? (
+          {!isSeller && (
             <Link
-              to="/dashboard"
-              className="bg-yellow-200 hover:bg-yellow-500 text-gray-900 font-semibold py-1.5 px-3 rounded-md text-xs"
+              to="/login"
+              className="flex items-center justify-center bg-white border-t-[3px] border-t-cyan-400 border-r-[3px] border-r-blue-700 border-b-[3px] border-b-blue-700 border-l-[3px] border-l-yellow-400 rounded-full px-3 py-0.5 shadow-sm active:scale-95"
             >
-              SELL
+              <span className="font-extrabold text-black mr-0.5 text-sm">+</span>
+              <span className="font-bold text-blue-800 text-xs">SELL</span>
             </Link>
-          ) : (
-            <button
-              className="bg-yellow-100 text-gray-400 font-semibold py-1.5 px-3 rounded-md text-xs cursor-not-allowed"
-              disabled
-            >
-              SELL
-            </button>
           )}
 
           {/* REQUEST - MOBILE (Buyers only) */}
@@ -634,9 +683,12 @@ export default function Navbar() {
                 onChange={(e) => setUserLocation(e.target.value)}
                 className="border rounded-md py-1.5 px-2 text-xs w-full"
               >
-                <option>India</option>
-                <option>Mumbai</option>
-                <option>Delhi</option>
+                <option value="India">India</option>
+                {states.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
               </select>
             </div>
             

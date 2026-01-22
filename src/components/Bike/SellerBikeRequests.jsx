@@ -5,7 +5,7 @@ import { getBikeBookingsForSeller } from "../../store/services/bikeBookingServic
 import { bookingStatuses, statusStyles } from "../../constants/bookingConstants";
 import SellerChatModal from "../Chat/SellerChatModal";
 
-const SellerChatList = () => {
+const SellerChatList = ({ onSelect, selectedId }) => {
   const sellerId = Number(localStorage.getItem("sellerId"));
 
   const [chats, setChats] = useState([]);
@@ -43,8 +43,12 @@ const SellerChatList = () => {
   }, [sellerId]);
 
   const openChat = (booking) => {
-    setSelectedBooking(booking);
-    setIsModalOpen(true);
+    if (onSelect) {
+      onSelect(booking);
+    } else {
+      setSelectedBooking(booking);
+      setIsModalOpen(true);
+    }
   };
 
   const closeChat = () => {
@@ -70,13 +74,21 @@ const SellerChatList = () => {
               <div
                 key={c.bookingId}
                 onClick={() => openChat(c)}
-                className="bg-white border rounded-lg p-4 cursor-pointer hover:bg-gray-50"
+                className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${selectedId === c.bookingId
+                    ? "bg-blue-50 border-blue-500 shadow-md ring-1 ring-blue-500"
+                    : "bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                  }`}
               >
-                <h2 className="font-semibold text-gray-900">{c.title}</h2>
+                <div className="flex justify-between items-start">
+                  <h2 className="font-semibold text-gray-900">{c.title}</h2>
+                  {selectedId === c.bookingId && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mt-1">
                   Buyer: {c.buyerName}
                 </p>
-                <div className="mt-2">
+                <div className="mt-2 text-right">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusStyles[c.status] ||
                       "bg-gray-100 text-gray-600 border-gray-200"
