@@ -10,6 +10,21 @@ export const addMobile = async (payload) => {
 };
 
 /* -----------------------------------------
+   GET MOBILE BRAND AND MODEL
+------------------------------------------ */
+export const getMobileBrands = async()=>{
+  const res = await apiClient.get("/api/v1/mobile-meta/brands");
+  return res.data
+}
+
+export const getMobileModels = async(brandId)=>{
+  const res = await apiClient.get("/api/v1/mobile-meta/models",{
+    params: {brandId}
+  });
+  return res.data
+} 
+
+/* -----------------------------------------
    UPDATE MOBILE
 ------------------------------------------ */
 export const updateMobile = async (id, payload) => {

@@ -311,6 +311,8 @@ import {
   addMobile,
   updateMobile,
   getMobileById,
+  getMobileBrands,
+  getMobileModels
 } from "../../store/services/mobileServices";
 import { uploadMobileImage } from "../../store/services/mobileImageServices";
 
@@ -345,6 +347,34 @@ export default function SellMobileForm({ productId }) {
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [brands, setBrands] = useState([]);
+  const [models,setModels] = useState([])
+
+  // Fetch Brand and Model on Load
+
+    useEffect(()=>{
+      const fetchBrands = async () => {
+      try{
+        const res = await getMobileBrands()
+        console.log(res)
+        setBrands(res)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+      fetchBrands()
+    },[])
+
+    const fetchModel = async (brandId) => {
+      if(!brandId) return
+      try{
+        const res = await getMobileModels(brandId)
+        console.log(res)
+        setModels(res)
+      } catch (error) {
+        console.log(error)
+      }
+    }
 
   // Fetch mobile data in edit mode
   useEffect(() => {
@@ -513,18 +543,53 @@ export default function SellMobileForm({ productId }) {
           onChange={(e) => updateField("title", e.target.value)}
           required
         />
-        <Input
+
+        {/* <Input
           label="Brand"
           value={form.brand}
           onChange={(e) => updateField("brand", e.target.value)}
           required
-        />
-        <Input
+        /> */}
+
+        <select
+          label = "Select Brand"
+          value={form.brand}
+          onChange={(e) =>{
+             const brandId = e.target.value
+             updateField("brand", brandId)
+             fetchModel(brandId)
+            }}
+          required
+        >
+          <option>Select Brand</option>
+          {brands.map((brand)=>(
+            <option key={brand.brandId} value={brand.brandId}>
+              {brand.name}
+            </option>
+          ))}
+        </select>
+
+        {/* <Input
           label="Model"
           value={form.model}
           onChange={(e) => updateField("model", e.target.value)}
           required
-        />
+        /> */}
+        
+        <select
+          label="Model"
+          value={form.model}
+          onChange={(e) => updateField("model", e.target.value)}
+          required
+        >
+          <option>Select Model</option>
+          {models.map((model)=>(
+            <option key={model.modelId} value={model.modelId}>
+              {model.name}
+            </option>
+          ))}
+        </select>
+
         <Input
           label="Color"
           value={form.color}
