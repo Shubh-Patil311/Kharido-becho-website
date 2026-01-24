@@ -315,6 +315,7 @@ import {
   getMobileModels
 } from "../../store/services/mobileServices";
 import { uploadMobileImage } from "../../store/services/mobileImageServices";
+import { getLocationStates, getLocationCities, getLocationLocalities } from "../../store/services/bikeBrandServices";
 
 const initialMobileForm = {
   title: "",
@@ -326,6 +327,9 @@ const initialMobileForm = {
   price: "",
   negotiable: false,
   condition: "USED", // NEW / USED / REFURBISHED from backend
+  state: "",
+  city: "",
+  locality: "",
 };
 
 export default function SellMobileForm({ productId }) {
@@ -350,26 +354,69 @@ export default function SellMobileForm({ productId }) {
   const [brands, setBrands] = useState([]);
   const [models,setModels] = useState([])
 
+  // Location Dropdown
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [localities, setLocalities] = useState([]);
+
   // Fetch Brand and Model on Load
 
     useEffect(()=>{
       const fetchBrands = async () => {
       try{
         const res = await getMobileBrands()
-        console.log(res)
         setBrands(res)
       } catch (error) {
         console.log(error)
       }
-    }
+      }
       fetchBrands()
+
+      const loadStates = async () => {
+        try {
+          const res = await getLocationStates();
+          // Handle if response is array or object
+          if(Array.isArray(res)){
+            console.log(res)
+            setStates(res);
+          } else if (res?.status === "success"){
+            setStates(res.data);
+          }
+        } catch (err) {
+          console.error("Failed to load states", err);
+        }
+      }
+      loadStates()
     },[])
+
+      const handleStateChange = async (state) => {
+        setCities([]);
+        setLocalities([]);
+        try {
+          const res = await getLocationCities(state);
+          if (Array.isArray(res)) setCities(res);
+          else if (res?.status === "success") setCities(res.data);
+        } catch (err) {
+          toast.error("Failed to load cities");
+        }
+      }
+
+      const handleCityChange = async (city) => {
+        
+        setLocalities([]);
+        try {
+          const res = await getLocationLocalities(form.state, city);
+          if (Array.isArray(res)) setLocalities(res);
+          else if (res?.status === "success") setLocalities(res.data);
+        } catch (err) {
+          toast.error("Failed to load localities");
+        }
+      }
 
     const fetchModel = async (brandId) => {
       if(!brandId) return
       try{
         const res = await getMobileModels(brandId)
-        console.log(res)
         setModels(res)
       } catch (error) {
         console.log(error)
@@ -396,6 +443,9 @@ export default function SellMobileForm({ productId }) {
             price: mobile.price || "",
             negotiable: mobile.negotiable || false,
             condition: mobile.condition || "USED",
+            state: mobile.state || "",
+            city: mobile.city || "",
+            locality : mobile.locality || ""
           });
         }
       } catch (error) {
@@ -643,6 +693,51 @@ export default function SellMobileForm({ productId }) {
             className="w-full border rounded p-2"
             rows={4}
           />
+        </div>
+
+         {/* 📍 LOCATION */}
+        <div className="col-span-2 mt-4 border-t pt-4">
+          <h2 className="text-lg font-bold mb-2">Confirm Your Location</h2>
+
+          <div className="grid grid-cols-3 gap-4">
+            <select
+              value={form.state}
+              onChange={(e) => {
+                updateField("state", e.target.value);
+                handleStateChange(e.target.value);
+              }}
+              className="border p-2 rounded ${errors[name] border-gray-300"
+            >
+              <option value="">Select State</option>
+              {states.map((state) => <option key={state} value={state}>{state}</option>)}
+            </select>
+
+            <select
+              value={form.city}
+              onChange={(e)=>{
+                updateField("city", e.target.value);
+                handleCityChange(e.target.value)
+              }}
+              className="border p-2 rounded ${errors[name] border-gray-300"
+            >
+              <option value="">Select City</option>
+              {cities.map((city) => <option key={city} value={city}>{city}</option>)}
+            </select>
+
+            <select
+              value={form.locality}
+              onChange={(e) => updateField("locality", e.target.value)}
+              className="border p-2 rounded ${errors[name] border-gray-300"
+            >
+              <option value="">Locality</option>
+              {localities.map((locality) => (
+                <option key={locality} value={locality}>
+                  {locality}
+                </option>
+              ))}
+            </select>
+            
+          </div>
         </div>
 
         <button
