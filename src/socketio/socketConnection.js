@@ -194,7 +194,7 @@ export const getSocket = () => {
     const token = localStorage.getItem("token");
     return initializeSocket(token);
   }
-
+ 
   return socket;
 };
 
@@ -275,5 +275,6 @@ export const testSocketConnection = () => {
     userId: localStorage.getItem("userId") || null
   };
 };
-
+ 
 export default socket;
+ 
