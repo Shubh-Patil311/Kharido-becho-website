@@ -551,23 +551,28 @@ export default function SellMobileForm({ productId }) {
           required
         /> */}
 
-        <select
-          label = "Select Brand"
-          value={form.brand}
-          onChange={(e) =>{
-             const brandId = e.target.value
-             updateField("brand", brandId)
-             fetchModel(brandId)
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold mb-1">
+            Select Brand
+          </label>
+          <select
+            value={form.brand}
+            onChange={(e) =>{
+              const brandId = e.target.value
+              updateField("brand", brandId)
+              fetchModel(brandId)
             }}
-          required
-        >
-          <option>Select Brand</option>
-          {brands.map((brand)=>(
-            <option key={brand.brandId} value={brand.brandId}>
-              {brand.name}
-            </option>
-          ))}
-        </select>
+            required
+            className="border p-2 rounded border-black"
+          >
+            <option>Select Brand</option>
+            {brands.map((brand)=>(
+              <option key={brand.brandId} value={brand.brandId}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* <Input
           label="Model"
@@ -576,19 +581,25 @@ export default function SellMobileForm({ productId }) {
           required
         /> */}
         
-        <select
-          label="Model"
-          value={form.model}
-          onChange={(e) => updateField("model", e.target.value)}
-          required
-        >
-          <option>Select Model</option>
-          {models.map((model)=>(
-            <option key={model.modelId} value={model.modelId}>
-              {model.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold mb-1">
+            Select Model
+          </label>
+          <select
+            label="Model"
+            value={form.model}
+            onChange={(e) => updateField("model", e.target.value)}
+            required
+            className="border p-2 rounded border-black"
+          >
+            <option>Select Model</option>
+              {models.map((model)=>(
+                <option key={model.modelId} value={model.modelId}>
+                {model.name}
+                </option>
+              ))}
+          </select>
+        </div>
 
         <Input
           label="Color"
