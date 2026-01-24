@@ -22,7 +22,7 @@ export const getMobileModels = async(brandId)=>{
     params: {brandId}
   });
   return res.data
-}
+} 
 
 /* -----------------------------------------
    UPDATE MOBILE
