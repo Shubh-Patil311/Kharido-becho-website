@@ -50,6 +50,9 @@ import BuyerLaptopChatList from "./pages/Buyer/BuyerLaptopChatList";
 import SellerLaptopChatList from "./pages/Seller/SellerLaptopChatList";
 import SellerLaptopChatThread from "./pages/Seller/SellerLaptopChatThread";
 
+// Mobile chat
+import MobileChat from "./pages/MobileChat";
+
 // import SellerLaptopChatList from "./pages/Seller/SellerLaptopChatList";
 // import SellerLaptopChatThread from "./pages/Seller/SellerLaptopChatThread";
 import BikeDetail from "./components/Bike/buyer/BikeDeatails";
@@ -208,6 +211,26 @@ function App() {
             }
           />
 
+          {/* ✅ NEW: BUYER MOBILE CHAT */}
+          <Route
+            path="/buyer/chat/mobile/:requestId"
+            element={
+              <ProtectedRoute requiredRole="BUYER">
+                <MobileChat />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ✅ MOBILE CHAT (works for both buyer and seller) */}
+          <Route
+            path="/mobile-chat/:requestId"
+            element={
+              <ProtectedRoute>
+                <MobileChat />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/buyer/laptop-chats"
             element={
@@ -321,6 +344,16 @@ function App() {
             element={
               <ProtectedRoute requiredRole="SELLER">
                 <SellerLaptopChatThread />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ✅ SELLER MOBILE CHAT */}
+          <Route
+            path="/seller/mobile-request-chat/:requestId"
+            element={
+              <ProtectedRoute requiredRole="SELLER">
+                <MobileChat />
               </ProtectedRoute>
             }
           />
