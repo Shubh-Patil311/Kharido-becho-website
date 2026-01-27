@@ -320,6 +320,7 @@ import { getLocationStates, getLocationCities, getLocationLocalities } from "../
 const initialMobileForm = {
   title: "",
   description: "",
+  brand:"",
   modelId: "",
   color: "",
   yearOfPurchase: "",
@@ -399,11 +400,10 @@ export default function SellMobileForm({ productId }) {
         }
       }
 
-      const handleCityChange = async (city) => {
-        
+      const handleCityChange = async (state,city) => {
         setLocalities([]);
         try {
-          const res = await getLocationLocalities(form.state, city);
+          const res = await getLocationLocalities(state, city);
           if (Array.isArray(res)) setLocalities(res);
           else if (res?.status === "success") setLocalities(res.data);
         } catch (err) {
@@ -434,8 +434,8 @@ export default function SellMobileForm({ productId }) {
           setForm({
             title: mobile.title || "",
             description: mobile.description || "",
-            brand: mobile.brand || "",
-            model: mobile.model || "",
+            brand: mobile.brandId || "",
+            modelId: mobile.modelId || "",
             color: mobile.color || "",
             yearOfPurchase: mobile.yearOfPurchase || "",
             price: mobile.price || "",
@@ -443,7 +443,7 @@ export default function SellMobileForm({ productId }) {
             condition: mobile.condition || "USED",
             state: mobile.state || "",
             city: mobile.city || "",
-            locality : mobile.locality || ""
+            address : mobile.address || ""
           });
         }
       } catch (error) {
@@ -459,17 +459,33 @@ export default function SellMobileForm({ productId }) {
       setForm({
         title: editItem.title || "",
         description: editItem.description || "",
-        brand: editItem.brand || "",
-        model: editItem.model || "",
+        brand: editItem.brandId || "",
+        modelId: editItem.modelId || "",
         color: editItem.color || "",
         yearOfPurchase: editItem.yearOfPurchase || "",
         price: editItem.price || "",
         negotiable: editItem.negotiable || false,
         condition: editItem.condition || "USED",
+        state: editItem.state || "",
+        city: editItem.city || "",
+        address: editItem.address || ""
       });
-    } else {
-      fetchMobileData();
-    }
+
+      // ✅ LOAD DEPENDENT DATA
+      if (editItem.brandId) {
+        fetchModel(editItem.brandId);
+      } 
+
+      if (editItem.state) {
+        handleStateChange(editItem.state);
+      }
+
+      if (editItem.stat && editItem.city) {
+        handleCityChange( editItem.state ,editItem.city);
+      }
+      } else {
+        fetchMobileData();
+      }
   }, [isEditMode, productId, editItem]);
 
   const updateField = (field, value) => {
@@ -602,13 +618,6 @@ export default function SellMobileForm({ productId }) {
           required
         />
 
-        {/* <Input
-          label="Brand"
-          value={form.brand}
-          onChange={(e) => updateField("brand", e.target.value)}
-          required
-        /> */}
-
         <div className="flex flex-col">
           <label className="text-sm font-semibold mb-1">
             Select Brand
@@ -617,6 +626,10 @@ export default function SellMobileForm({ productId }) {
             value={form.brand}
             onChange={(e) =>{
               const brandId = e.target.value;
+              updateField("brand", brandId); 
+              updateField("modelId","");
+              setModels([])
+
               fetchModel(brandId)
             }}
             required
@@ -630,13 +643,6 @@ export default function SellMobileForm({ productId }) {
             ))}
           </select>
         </div>
-
-        {/* <Input
-          label="Model"
-          value={form.model}
-          onChange={(e) => updateField("model", e.target.value)}
-          required
-        /> */}
         
         <div className="flex flex-col">
           <label className="text-sm font-semibold mb-1">
@@ -724,7 +730,7 @@ export default function SellMobileForm({ productId }) {
               value={form.city}
               onChange={(e)=>{
                 updateField("city", e.target.value);
-                handleCityChange(e.target.value)
+                handleCityChange(form.state, e.target.value)
               }}
               className="border p-2 rounded ${errors[name] border-gray-300"
             >
