@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MdClose } from "react-icons/md";
-import useChat from "../../hook/useChat"; // BIKE
-import useCarChat from "../../hook/useCarChat"; // CAR
+import useChat from "../../hook/useChat"; // BIKE (API fallback)
+import useCarChat from "../../hook/useCarChat"; // CAR (API fallback)
+import { useSocketChat } from "../../socketio/useSocketChat"; // Socket.IO
 
 const BuyerChatInterface = ({
     bookingId,
@@ -9,15 +10,19 @@ const BuyerChatInterface = ({
     chatType = "CAR",
     bookingStatus,
     onClose,
-    isEmbedded = false
+    isEmbedded = false,
+    useSocketIO = true, // Enable Socket.IO by default
 }) => {
     const [inputValue, setInputValue] = useState("");
 
-    // 🔥 choose hook based on type
-    const chatHook =
-        chatType === "CAR" ? useCarChat(bookingId) : useChat(bookingId);
+    // Use Socket.IO chat if enabled, otherwise fallback to API
+    const socketChat = useSocketChat(bookingId, senderType, chatType);
+    const apiChatHook = chatType === "CAR" ? useCarChat(bookingId) : useChat(bookingId);
+    
+    // Choose which chat to use
+    const chatHook = useSocketIO && socketChat.connected ? socketChat : apiChatHook;
 
-    const { messages, loading, sending, error, sendMessage, status: hookStatus } = chatHook;
+    const { messages, loading, sending, error, sendMessage, status: hookStatus, connected = false } = chatHook;
 
     // Use the status from the hook if available (fresher), otherwise fallback to prop
     const status = hookStatus || bookingStatus;
@@ -47,6 +52,21 @@ const BuyerChatInterface = ({
                 <div>
                     <h2 className="text-lg font-bold mt-3 text-gray-800">Chat</h2>
                     <p className="text-xs text-gray-500">Booking ID: {bookingId}</p>
+                    {useSocketIO && (
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                            {connected ? (
+                                <>
+                                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                    Real-time
+                                </>
+                            ) : (
+                                <>
+                                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                    API Mode
+                                </>
+                            )}
+                        </p>
+                    )}
                 </div>
                 {onClose && (
                     <button
@@ -74,16 +94,25 @@ const BuyerChatInterface = ({
 
                 {(messages || []).map((msg, i) => {
                     const isMe = msg.senderType === senderType;
+                    const messageKey = msg.messageId || msg.id || `msg-${i}`;
                     return (
-                        <div key={i} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-fadeIn`}>
+                        <div key={messageKey} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-fadeIn`}>
                             <div
                                 className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed max-w-[80%] shadow-sm
                   ${isMe
                                         ? "bg-green-600 text-white rounded-br-none"
                                         : "bg-white text-gray-800 border border-gray-100 rounded-bl-none"}
+                  ${msg.optimistic ? "opacity-70" : ""}
+                  ${msg.failed ? "opacity-50 border-red-300" : ""}
                 `}
                             >
                                 {msg?.content || msg?.content === "" ? msg.content : "Invalid message"}
+                                {msg.optimistic && (
+                                    <span className="ml-2 text-xs opacity-60">⏳</span>
+                                )}
+                                {msg.failed && (
+                                    <span className="ml-2 text-xs opacity-60">⚠️</span>
+                                )}
                             </div>
                         </div>
                     );

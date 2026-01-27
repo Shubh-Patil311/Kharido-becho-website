@@ -320,8 +320,7 @@ import { getLocationStates, getLocationCities, getLocationLocalities } from "../
 const initialMobileForm = {
   title: "",
   description: "",
-  brand: "",
-  model: "",
+  modelId: "",
   color: "",
   yearOfPurchase: "",
   price: "",
@@ -329,7 +328,7 @@ const initialMobileForm = {
   condition: "USED", // NEW / USED / REFURBISHED from backend
   state: "",
   city: "",
-  locality: "",
+  address: "",
 };
 
 export default function SellMobileForm({ productId }) {
@@ -377,7 +376,6 @@ export default function SellMobileForm({ productId }) {
           const res = await getLocationStates();
           // Handle if response is array or object
           if(Array.isArray(res)){
-            console.log(res)
             setStates(res);
           } else if (res?.status === "success"){
             setStates(res.data);
@@ -491,11 +489,21 @@ export default function SellMobileForm({ productId }) {
       setCreating(true);
 
       const payload = {
-        ...form,
+        title: form.title,
+        description: form.description,
+        modelId: Number(form.modelId),
+        color: form.color,
         price: Number(form.price),
         yearOfPurchase: Number(form.yearOfPurchase),
+        negotiable: form.negotiable,
+        condition: form.condition,
+        state: form.state,
+        city: form.city,
+        address: form.address,
         sellerId,
       };
+
+      console.log("Submiting payload :", payload);
 
       if (isEditMode && productId) {
         // UPDATE MODE
@@ -562,7 +570,7 @@ export default function SellMobileForm({ productId }) {
     }
   };
 
-  if (loading) {
+  if (loading){
     return (
       <div className="container mx-auto px-5 py-6">
         <p>Loading mobile data...</p>
@@ -608,8 +616,7 @@ export default function SellMobileForm({ productId }) {
           <select
             value={form.brand}
             onChange={(e) =>{
-              const brandId = e.target.value
-              updateField("brand", brandId)
+              const brandId = e.target.value;
               fetchModel(brandId)
             }}
             required
@@ -637,8 +644,8 @@ export default function SellMobileForm({ productId }) {
           </label>
           <select
             label="Model"
-            value={form.model}
-            onChange={(e) => updateField("model", e.target.value)}
+            value={form.modelId}
+            onChange={(e) => updateField("modelId", e.target.value)}
             required
             className="border p-2 rounded border-black"
           >
@@ -656,6 +663,7 @@ export default function SellMobileForm({ productId }) {
           value={form.color}
           onChange={(e) => updateField("color", e.target.value)}
         />
+        
         <Input
           label="Year of Purchase"
           type="number"
@@ -725,8 +733,8 @@ export default function SellMobileForm({ productId }) {
             </select>
 
             <select
-              value={form.locality}
-              onChange={(e) => updateField("locality", e.target.value)}
+              value={form.address}
+              onChange={(e) => updateField("address", e.target.value)}
               className="border p-2 rounded ${errors[name] border-gray-300"
             >
               <option value="">Locality</option>

@@ -24,10 +24,38 @@ export const useLiveAuction = (productType) => {
 
     // Get or initialize socket
     let socket = getSocket();
-    if (!socket || !socket.connected) {
+    
+    // If no socket, try to initialize
+    if (!socket) {
       socket = initializeSocket(token);
     }
+    
+    // If still no socket, can't connect
+    if (!socket) {
+      console.warn("Failed to initialize Socket.IO - userId or token missing");
+      setConnected(false);
+      setLoading(false);
+      return;
+    }
+
     socketRef.current = socket;
+
+    // If socket exists but not connected, wait for connection
+    if (!socket.connected) {
+      // Wait a bit for connection
+      const connectionCheckTimeout = setTimeout(() => {
+        if (!socket.connected) {
+          console.warn("Socket.IO connection timeout for live auctions");
+          setConnected(false);
+          setLoading(false);
+        }
+      }, 2000);
+      
+      // Clear timeout if connection succeeds
+      socket.once("connect", () => {
+        clearTimeout(connectionCheckTimeout);
+      });
+    }
 
     let connectionTimeout;
     let hasShownError = false;
@@ -255,4 +283,3 @@ const getProductId = (product) => {
   if (product.laptopId) return product.laptopId;
   return product.id;
 };
-

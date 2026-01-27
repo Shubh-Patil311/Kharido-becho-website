@@ -5,6 +5,7 @@ import SellerCarRequest from "../../components/Car/seller/SellerCarRequest";
 import SellerLaptopRequests from "../../components/Laptop/SellerLaptopRequests";
 import SellerMobileRequestList from "../../components/Mobile/Seller/SellerMobileRequestList";
 import SellerChatInterface from "../../components/Chat/SellerChatInterface";
+import MobileChatInterface from "../../components/Chat/MobileChatInterface";
 
 const SellerRequestsPage = () => {
   const [activeProduct, setActiveProduct] = useState("bike");
@@ -20,6 +21,22 @@ const SellerRequestsPage = () => {
   useEffect(() => {
     setSelectedBooking(null);
   }, [activeProduct]);
+
+  // Listen for mobile request updates
+  useEffect(() => {
+    const handleRequestUpdate = () => {
+      // Refresh the selected booking if it's a mobile request
+      if (activeProduct === "mobile" && selectedBooking) {
+        // The SellerMobileRequestList will refresh automatically
+        // We just need to update the selected booking status if needed
+      }
+    };
+
+    window.addEventListener("mobile-request-updated", handleRequestUpdate);
+    return () => {
+      window.removeEventListener("mobile-request-updated", handleRequestUpdate);
+    };
+  }, [activeProduct, selectedBooking]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -88,13 +105,28 @@ const SellerRequestsPage = () => {
           <div className={`lg:col-span-7 xl:col-span-8 sticky top-[16rem] md:top-[12.5rem] lg:top-[14rem] h-[calc(100vh-240px)] ${!selectedBooking ? 'hidden lg:flex' : 'flex'} flex-col`}>
             {selectedBooking ? (
               <div className="flex-1 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden flex flex-col">
-                <SellerChatInterface
-                  bookingId={selectedBooking.bookingId}
-                  chatType={activeProduct.toUpperCase()}
-                  bookingStatus={selectedBooking.status}
-                  onClose={() => setSelectedBooking(null)}
-                  isEmbedded={true}
-                />
+                {activeProduct === "mobile" ? (
+                  <MobileChatInterface
+                    requestId={selectedBooking.bookingId}
+                    senderType="SELLER"
+                    bookingStatus={selectedBooking.status}
+                    onClose={() => setSelectedBooking(null)}
+                    isEmbedded={true}
+                    useSocketIO={true}
+                    onStatusUpdate={(newStatus) => {
+                      // Update the selected booking status
+                      setSelectedBooking(prev => prev ? { ...prev, status: newStatus } : null);
+                    }}
+                  />
+                ) : (
+                  <SellerChatInterface
+                    bookingId={selectedBooking.bookingId}
+                    chatType={activeProduct.toUpperCase()}
+                    bookingStatus={selectedBooking.status}
+                    onClose={() => setSelectedBooking(null)}
+                    isEmbedded={true}
+                  />
+                )}
               </div>
             ) : (
               <div className="flex-1 bg-white rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center p-12 text-center text-gray-400">

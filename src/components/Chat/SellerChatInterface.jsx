@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MdClose } from "react-icons/md";
 import useChatSeller from "../../hook/useChatSeller";
+import { useSocketChat } from "../../socketio/useSocketChat";
 import { bookingStatuses, statusStyles } from "../../constants/bookingConstants";
 
 const SellerChatInterface = ({
@@ -8,7 +9,8 @@ const SellerChatInterface = ({
     chatType = "BIKE",
     bookingStatus,
     onClose,
-    isEmbedded = false
+    isEmbedded = false,
+    useSocketIO = true, // Enable Socket.IO by default
 }) => {
     const [inputValue, setInputValue] = useState("");
     const [status, setStatus] = useState(bookingStatus);
@@ -17,8 +19,15 @@ const SellerChatInterface = ({
         setStatus(bookingStatus);
     }, [bookingStatus]);
 
-    const { messages, loading, sending, error, sendMessage, acceptBooking, rejectBooking } =
-        useChatSeller(bookingId);
+    // Use Socket.IO chat if enabled, otherwise fallback to API
+    const socketChat = useSocketChat(bookingId, "SELLER", chatType);
+    const apiChatHook = useChatSeller(bookingId);
+    
+    // Choose which chat to use - Socket.IO for messages, API for accept/reject
+    const chatHook = useSocketIO && socketChat.connected ? socketChat : apiChatHook;
+    const { acceptBooking, rejectBooking } = apiChatHook; // Always use API for actions
+
+    const { messages, loading, sending, error, sendMessage, connected = false } = chatHook;
 
     const messagesEndRef = useRef(null);
 
@@ -30,7 +39,12 @@ const SellerChatInterface = ({
         e.preventDefault();
         if (!inputValue.trim()) return;
         try {
-            await sendMessage(inputValue);
+            // Socket.IO sendMessage expects (content, senderType), API expects just content
+            if (useSocketIO && socketChat.connected) {
+                await sendMessage(inputValue, "SELLER");
+            } else {
+                await sendMessage(inputValue);
+            }
             setInputValue("");
         } catch (err) {
             console.error("Seller send failed:", err);
@@ -57,6 +71,21 @@ const SellerChatInterface = ({
                 <div>
                     <h2 className="text-lg font-bold text-gray-800">Chat</h2>
                     <p className="text-xs text-gray-500">Booking ID: {bookingId}</p>
+                    {useSocketIO && (
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                            {connected ? (
+                                <>
+                                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                    Real-time
+                                </>
+                            ) : (
+                                <>
+                                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                    API Mode
+                                </>
+                            )}
+                        </p>
+                    )}
                 </div>
                 <div className="flex items-center gap-3">
                     <span
@@ -93,16 +122,25 @@ const SellerChatInterface = ({
 
                 {(messages || []).map((msg, i) => {
                     const isMe = msg.senderType === "SELLER";
+                    const messageKey = msg.messageId || msg.id || `msg-${i}`;
                     return (
-                        <div key={i} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-fadeIn`}>
+                        <div key={messageKey} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-fadeIn`}>
                             <div
                                 className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed max-w-[80%] shadow-sm
                   ${isMe
                                         ? "bg-green-600 text-white rounded-br-none"
                                         : "bg-white text-gray-800 border border-gray-100 rounded-bl-none"}
+                  ${msg.optimistic ? "opacity-70" : ""}
+                  ${msg.failed ? "opacity-50 border-red-300" : ""}
                 `}
                             >
                                 {msg?.content || msg?.content === "" ? msg.content : "Invalid message"}
+                                {msg.optimistic && (
+                                    <span className="ml-2 text-xs opacity-60">⏳</span>
+                                )}
+                                {msg.failed && (
+                                    <span className="ml-2 text-xs opacity-60">⚠️</span>
+                                )}
                             </div>
                         </div>
                     );

@@ -36,6 +36,17 @@ const SellerMobileRequestList = ({ onSelect, selectedId }) => {
         };
 
         loadRequests();
+
+        // Listen for request updates
+        const handleRequestUpdate = () => {
+            loadRequests();
+        };
+
+        window.addEventListener("mobile-request-updated", handleRequestUpdate);
+
+        return () => {
+            window.removeEventListener("mobile-request-updated", handleRequestUpdate);
+        };
     }, [sellerId]);
 
     const openChat = (e, requestId) => {
