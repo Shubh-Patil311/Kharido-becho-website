@@ -320,7 +320,7 @@ import { getLocationStates, getLocationCities, getLocationLocalities } from "../
 const initialMobileForm = {
   title: "",
   description: "",
-  brand:"",
+  brandId:"",
   modelId: "",
   color: "",
   yearOfPurchase: "",
@@ -359,6 +359,9 @@ export default function SellMobileForm({ productId }) {
   const [cities, setCities] = useState([]);
   const [localities, setLocalities] = useState([]);
 
+  // Description Validation
+  const [errors, setErrors] = useState({})
+
   // Fetch Brand and Model on Load
 
     useEffect(()=>{
@@ -393,10 +396,12 @@ export default function SellMobileForm({ productId }) {
         setLocalities([]);
         try {
           const res = await getLocationCities(state);
-          if (Array.isArray(res)) setCities(res);
-          else if (res?.status === "success") setCities(res.data);
+          const data = Array.isArray(res) ? res : res?.data || [];
+          setCities(data);
+          return data;
         } catch (err) {
           toast.error("Failed to load cities");
+          return [];
         }
       }
 
@@ -404,10 +409,12 @@ export default function SellMobileForm({ productId }) {
         setLocalities([]);
         try {
           const res = await getLocationLocalities(state, city);
-          if (Array.isArray(res)) setLocalities(res);
-          else if (res?.status === "success") setLocalities(res.data);
+          const data = Array.isArray(res) ? res : res?.data || [];
+          setLocalities(data);
+          return data;
         } catch (err) {
           toast.error("Failed to load localities");
+          return [];
         }
       }
 
@@ -421,72 +428,63 @@ export default function SellMobileForm({ productId }) {
       }
     }
 
+    const ValidateDescription = (text) => {
+      const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+      return wordCount >= 5;
+    }
+
   // Fetch mobile data in edit mode
   useEffect(() => {
-    const fetchMobileData = async () => {
-      if (!isEditMode || !productId) return;
+    const preloadEditData = async () => {
+    if (!isEditMode || !productId) return;
 
-      try {
-        setLoading(true);
-        const mobile = await getMobileById(productId);
+    try {
+      setLoading(true);
 
-        if (mobile) {
-          setForm({
-            title: mobile.title || "",
-            description: mobile.description || "",
-            brand: mobile.brandId || "",
-            modelId: mobile.modelId || "",
-            color: mobile.color || "",
-            yearOfPurchase: mobile.yearOfPurchase || "",
-            price: mobile.price || "",
-            negotiable: mobile.negotiable || false,
-            condition: mobile.condition || "USED",
-            state: mobile.state || "",
-            city: mobile.city || "",
-            address : mobile.address || ""
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch mobile:", error);
-        toast.error("Failed to load mobile data");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const mobile = editItem ?? await getMobileById(productId);
+      if (!mobile) return;
 
-    // If editItem is provided in state, use it directly
-    if (isEditMode && editItem) {
       setForm({
-        title: editItem.title || "",
-        description: editItem.description || "",
-        brand: editItem.brandId || "",
-        modelId: editItem.modelId || "",
-        color: editItem.color || "",
-        yearOfPurchase: editItem.yearOfPurchase || "",
-        price: editItem.price || "",
-        negotiable: editItem.negotiable || false,
-        condition: editItem.condition || "USED",
-        state: editItem.state || "",
-        city: editItem.city || "",
-        address: editItem.address || ""
+        title: mobile.title || "",
+        description: mobile.description || "",
+        brandId: mobile.brandId || "",
+        modelId: mobile.modelId || "",
+        color: mobile.color || "",
+        yearOfPurchase: mobile.yearOfPurchase || "",
+        price: mobile.price || "",
+        negotiable: mobile.negotiable || false,
+        condition: mobile.condition || "USED",
+        state: mobile.state || "",
+        city: mobile.city || "",
+        address: ""
       });
 
-      // ✅ LOAD DEPENDENT DATA
-      if (editItem.brandId) {
-        fetchModel(editItem.brandId);
-      } 
-
-      if (editItem.state) {
-        handleStateChange(editItem.state);
+      if (mobile.brandId) {
+        await fetchModel(mobile.brandId);
       }
 
-      if (editItem.stat && editItem.city) {
-        handleCityChange( editItem.state ,editItem.city);
+      if (mobile.state) {
+        await handleStateChange(mobile.state);
       }
-      } else {
-        fetchMobileData();
+
+      if (mobile.state && mobile.city) {
+        const locs = await handleCityChange(mobile.state, mobile.city);
+        if (locs.includes(mobile.address)) {
+          setForm(prev => ({
+            ...prev,
+            address: mobile.address
+          }));
+        }
       }
-  }, [isEditMode, productId, editItem]);
+    } catch (err) {
+      toast.error("Failed to load mobile data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  preloadEditData();
+  }, [isEditMode, productId]);
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -495,6 +493,19 @@ export default function SellMobileForm({ productId }) {
   /** -------------------- CREATE/UPDATE MOBILE -------------------- **/
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const newErrors = {};
+
+    if(!ValidateDescription(form.description)){
+      newErrors.description = "Description must contain at least 5 words";
+    }
+
+    if(Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({})
 
     if (!sellerId) {
       toast.error("Seller ID missing. Please login again.");
@@ -623,19 +634,18 @@ export default function SellMobileForm({ productId }) {
             Select Brand
           </label>
           <select
-            value={form.brand}
+            value={form.brandId}
             onChange={(e) =>{
               const brandId = e.target.value;
-              updateField("brand", brandId); 
+              updateField("brandId", brandId); 
               updateField("modelId","");
               setModels([])
-
               fetchModel(brandId)
             }}
             required
             className="border p-2 rounded border-black"
           >
-            <option>Select Brand</option>
+            <option value="">Select Brand</option>
             {brands.map((brand)=>(
               <option key={brand.brandId} value={brand.brandId}>
                 {brand.name}
@@ -703,10 +713,20 @@ export default function SellMobileForm({ productId }) {
           <label className="font-semibold mb-1">Description</label>
           <textarea
             value={form.description}
-            onChange={(e) => updateField("description", e.target.value)}
-            className="w-full border rounded p-2"
+            onChange={(e) => {
+              updateField("description", e.target.value);
+              if(errors.description){
+                setErrors((prev) => ({...prev, description: ""}))
+              }
+            }}
+            className={`w-full border rounded p-2 ${errors.description ? "border-red-500" : "border-gray-300"}`}
             rows={4}
           />
+          { errors.description && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.description}
+            </p>
+          )}
         </div>
 
          {/* 📍 LOCATION */}

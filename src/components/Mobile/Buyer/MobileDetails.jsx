@@ -32,10 +32,7 @@ export default function MobileDetail() {
 
     /* ================= LOAD MOBILE ================= */
     useEffect(() => {
-        loadMobile();
-    }, [id]);
-
-    const loadMobile = async () => {
+        const loadMobile = async () => {
         setLoading(true);
         try {
             const data = await getMobileById(id);
@@ -45,7 +42,11 @@ export default function MobileDetail() {
         } finally {
             setLoading(false);
         }
-    };
+        };
+        loadMobile();
+    }, [id]);
+
+    
 
     /* ================= MAKE OFFER ================= */
     const handleMakeOffer = async () => {
@@ -74,23 +75,32 @@ export default function MobileDetail() {
         const buyerUserId = Number(localStorage.getItem("userId"));
 
         if (!buyerUserId) {
-            toast.error("Please login and make an offer first");
+            toast.error("Please login to start chat");
             return;
         }
 
+
         try {
-            const request = await createMobileRequest({
+            const payload = {
                 mobileId: Number(id),
                 buyerUserId,
-                message: "Hi, I am interested in this mobile",
-            });
+                message: "Hi, I want to make an offer for this mobile",
+            };
+            console.log("Create Mobile Request Payload:", payload);
+            const request = await createMobileRequest(payload);
 
+            const requestId = request?.requestId || request?.data?.requestId;
+            if(!requestId){
+                toast.error("Chat Started but request ID not found");
+                return
+            }
+            
             toast.success("Chat started");
 
             // ✅ Redirect to buyer chat
-            window.location.href = `/buyer/chat/${request.requestId}`;
+            window.location.href = `/buyer/chat/${requestId}`;
         } catch (err) {
-            toast.error("Unable to start chat");
+            toast.error( err?.response?.data?.message || "Failed to start chat");
         }
     };
 
