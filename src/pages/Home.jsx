@@ -12,6 +12,7 @@ import {
   MdLocalShipping,
   MdSecurity,
   MdTrendingUp,
+  MdGavel,
 } from "react-icons/md";
 import RecommendationGrid from "../components/RecommendationGrid";
 
@@ -54,6 +55,15 @@ export default function Home() {
       path: "/buy/laptops",
       banner:
         "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+    },
+    {
+      icon: <MdGavel />,
+      label: "🔴 Live Auctions",
+      count: "Live Now",
+      bgColor: "from-red-500 to-pink-600",
+      path: "/buy/products",
+      banner:
+        "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     },
   ];
 
@@ -187,11 +197,17 @@ export default function Home() {
                 <MdArrowForward className="ml-2" />
               </button>
               <button
-                onClick={() => navigate("/buy/laptops")}
+                onClick={() => navigate("/buy/products")}
                 className="px-8 py-3 bg-blue-800 text-white rounded-xl font-semibold hover:bg-blue-900 transition shadow-lg border border-blue-700"
               >
                 Browse Products
               </button>
+              {/* <button
+                onClick={() => navigate("/buy/products")}
+                className="px-8 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition shadow-lg border border-red-500 flex items-center justify-center"
+              >
+                🔴 Live Auctions
+              </button> */}
             </div>
           </div>
         </div>
@@ -208,7 +224,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4  gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {categories.map((category, idx) => (
             <Link
               key={idx}

@@ -48,7 +48,6 @@ export const initializeSocket = (token) => {
 
   isInitializing = true;
   
- 
   const socketUrl = SOCKET_IO_URL;
   
   console.log("🔌 Creating NEW Socket.IO connection");
@@ -195,7 +194,7 @@ export const getSocket = () => {
     const token = localStorage.getItem("token");
     return initializeSocket(token);
   }
-  
+ 
   return socket;
 };
 
@@ -276,5 +275,6 @@ export const testSocketConnection = () => {
     userId: localStorage.getItem("userId") || null
   };
 };
-
+ 
 export default socket;
+ 

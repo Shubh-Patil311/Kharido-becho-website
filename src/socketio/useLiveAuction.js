@@ -283,4 +283,3 @@ const getProductId = (product) => {
   if (product.laptopId) return product.laptopId;
   return product.id;
 };
-

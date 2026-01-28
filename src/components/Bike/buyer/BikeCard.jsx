@@ -42,6 +42,15 @@ export default function BikeCard({ bike }) {
             FEATURED
           </span>
         )}
+
+        {/* Sold Badge */}
+        {bike?.status === "SOLD" && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <span className="text-white font-bold text-xl border-2 border-white px-4 py-1 rounded bg-red-600/80 transform -rotate-12">
+              SOLD
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}

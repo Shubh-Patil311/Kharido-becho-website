@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getBookingsForSeller } from "../../../store/services/carBookingServices";
 
-export default function SellerCarRequest() {
+export default function SellerCarRequest({ onSelect, selectedId }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const sellerId = Number(localStorage.getItem("sellerId"));
@@ -54,49 +54,52 @@ export default function SellerCarRequest() {
           (car.images && car.images.length && car.images[0].imageUrl) ||
           "/placeholder.png";
 
+        const bookingId = b.bookingId || b.id;
+
         return (
           <div
-            key={b.bookingId}
-            className="bg-white rounded shadow p-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-center"
+            key={bookingId}
+            onClick={() => onSelect && onSelect({
+              bookingId,
+              title: car.title || "Car",
+              status: b.bookingStatus || b.status || "PENDING",
+              buyerName
+            })}
+            className={`cursor-pointer transition-all duration-200 p-4 border rounded-lg shadow-sm ${selectedId === bookingId
+                ? "bg-blue-50 border-blue-500 ring-1 ring-blue-500"
+                : "bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+              }`}
           >
-            <div className="md:col-span-1">
+            <div className="flex gap-4">
               <img
                 src={img}
                 alt="car"
-                className="w-28 h-20 object-cover rounded"
+                className="w-20 h-20 object-cover rounded shadow-sm"
                 onError={(e) => (e.currentTarget.src = "/placeholder.png")}
               />
-            </div>
-
-            <div className="md:col-span-3">
-              <div className="font-semibold">
-                {car.title}
-                {car.variant ? `- ${car.variant}` : ""}
-              </div>
-              <div className="text-xs text-gray-500">
-                CarId: {car.carId} • SellerId:{" "}
-                {car.seller?.sellerId ?? b.seller?.sellerId}
-              </div>
-              <div className="text-sm mt-1">{car.description || ""}</div>
-            </div>
-
-            <div className="md:col-span-1">
-              <div className="text-sm">Buyer: {buyerName}</div>
-              <div className="text-xs text-gray-500">
-                BuyerId: {buyer.buyerId}
-              </div>
-            </div>
-
-            <div className="md:col-span-1 text-right">
-              <div className="font-medium">
-                ₹ {Number(car.price || 0).toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-500">{b.bookingStatus}</div>
-              <div className="text-xs text-gray-400 mt-1">
-                {new Date(b.bookingDate || b.createdAt).toLocaleString()}
-              </div>
-              <div className="mt-2 text-xs text-gray-600">
-                bookingId: {b.bookingId}
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-gray-900 leading-tight">
+                    {car.title}
+                    {car.variant ? ` - ${car.variant}` : ""}
+                  </h3>
+                  {selectedId === bookingId && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Buyer: {buyerName}
+                </div>
+                <div className="flex justify-between items-end mt-2">
+                  <div className="font-bold text-blue-700">
+                    ₹ {Number(car.price || 0).toLocaleString()}
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] uppercase font-bold bg-gray-100 text-gray-600 border border-gray-200">
+                      {b.bookingStatus || b.status || "PENDING"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

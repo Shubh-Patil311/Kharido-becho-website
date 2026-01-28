@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 import { getMobileRequestsBySeller } from "../../../store/services/mobileRequestServices";
 
-const SellerMobileRequestList = () => {
+const SellerMobileRequestList = ({ onSelect, selectedId }) => {
     const navigate = useNavigate();
     const sellerId = Number(localStorage.getItem("sellerId"));
 
@@ -72,29 +72,33 @@ const SellerMobileRequestList = () => {
                         {requests.map((r) => (
                             <div
                                 key={r.requestId}
-                                onClick={() =>
-                                    navigate(`/seller/mobile-request-chat/${r.requestId}`)
-                                }
-                                className="bg-white border rounded-lg p-4 cursor-pointer hover:bg-gray-50 flex justify-between items-center"
+                                onClick={() => onSelect && onSelect({
+                                    bookingId: r.requestId,
+                                    title: r.title,
+                                    status: r.status,
+                                    buyerName: r.buyerName
+                                })}
+                                className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${selectedId === r.requestId
+                                        ? "bg-blue-50 border-blue-500 shadow-md ring-1 ring-blue-500"
+                                        : "bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                                    }`}
                             >
-                                {/* LEFT INFO */}
-                                <div>
+                                <div className="flex justify-between items-start">
                                     <h2 className="font-semibold text-gray-900">{r.title}</h2>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        Buyer: {r.buyerName}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Status: {r.status}
-                                    </p>
+                                    {selectedId === r.requestId && (
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                    )}
                                 </div>
-
-                                {/* RIGHT BUTTON */}
-                                <button
-                                    onClick={(e) => openChat(e, r.requestId)}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-blue-700"
-                                >
-                                    Chat
-                                </button>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Buyer: {r.buyerName}
+                                </p>
+                                <div className="mt-2 text-right">
+                                    <span
+                                        className="px-2 py-0.5 rounded-full text-xs font-medium border bg-gray-100 text-gray-600 border-gray-200 capitalize"
+                                    >
+                                        {r.status}
+                                    </span>
+                                </div>
                             </div>
                         ))}
                     </div>
