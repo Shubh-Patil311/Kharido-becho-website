@@ -315,17 +315,21 @@ import {
   getMobileModels
 } from "../../store/services/mobileServices";
 import { uploadMobileImage } from "../../store/services/mobileImageServices";
+import { getLocationStates, getLocationCities, getLocationLocalities } from "../../store/services/bikeBrandServices";
 
 const initialMobileForm = {
   title: "",
   description: "",
-  brand: "",
-  model: "",
+  brand:"",
+  modelId: "",
   color: "",
   yearOfPurchase: "",
   price: "",
   negotiable: false,
   condition: "USED", // NEW / USED / REFURBISHED from backend
+  state: "",
+  city: "",
+  address: "",
 };
 
 export default function SellMobileForm({ productId }) {
@@ -350,26 +354,67 @@ export default function SellMobileForm({ productId }) {
   const [brands, setBrands] = useState([]);
   const [models,setModels] = useState([])
 
+  // Location Dropdown
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [localities, setLocalities] = useState([]);
+
   // Fetch Brand and Model on Load
 
     useEffect(()=>{
       const fetchBrands = async () => {
       try{
         const res = await getMobileBrands()
-        console.log(res)
         setBrands(res)
       } catch (error) {
         console.log(error)
       }
-    }
+      }
       fetchBrands()
+
+      const loadStates = async () => {
+        try {
+          const res = await getLocationStates();
+          // Handle if response is array or object
+          if(Array.isArray(res)){
+            setStates(res);
+          } else if (res?.status === "success"){
+            setStates(res.data);
+          }
+        } catch (err) {
+          console.error("Failed to load states", err);
+        }
+      }
+      loadStates()
     },[])
+
+      const handleStateChange = async (state) => {
+        setCities([]);
+        setLocalities([]);
+        try {
+          const res = await getLocationCities(state);
+          if (Array.isArray(res)) setCities(res);
+          else if (res?.status === "success") setCities(res.data);
+        } catch (err) {
+          toast.error("Failed to load cities");
+        }
+      }
+
+      const handleCityChange = async (state,city) => {
+        setLocalities([]);
+        try {
+          const res = await getLocationLocalities(state, city);
+          if (Array.isArray(res)) setLocalities(res);
+          else if (res?.status === "success") setLocalities(res.data);
+        } catch (err) {
+          toast.error("Failed to load localities");
+        }
+      }
 
     const fetchModel = async (brandId) => {
       if(!brandId) return
       try{
         const res = await getMobileModels(brandId)
-        console.log(res)
         setModels(res)
       } catch (error) {
         console.log(error)
@@ -389,13 +434,16 @@ export default function SellMobileForm({ productId }) {
           setForm({
             title: mobile.title || "",
             description: mobile.description || "",
-            brand: mobile.brand || "",
-            model: mobile.model || "",
+            brand: mobile.brandId || "",
+            modelId: mobile.modelId || "",
             color: mobile.color || "",
             yearOfPurchase: mobile.yearOfPurchase || "",
             price: mobile.price || "",
             negotiable: mobile.negotiable || false,
             condition: mobile.condition || "USED",
+            state: mobile.state || "",
+            city: mobile.city || "",
+            address : mobile.address || ""
           });
         }
       } catch (error) {
@@ -411,17 +459,33 @@ export default function SellMobileForm({ productId }) {
       setForm({
         title: editItem.title || "",
         description: editItem.description || "",
-        brand: editItem.brand || "",
-        model: editItem.model || "",
+        brand: editItem.brandId || "",
+        modelId: editItem.modelId || "",
         color: editItem.color || "",
         yearOfPurchase: editItem.yearOfPurchase || "",
         price: editItem.price || "",
         negotiable: editItem.negotiable || false,
         condition: editItem.condition || "USED",
+        state: editItem.state || "",
+        city: editItem.city || "",
+        address: editItem.address || ""
       });
-    } else {
-      fetchMobileData();
-    }
+
+      // ✅ LOAD DEPENDENT DATA
+      if (editItem.brandId) {
+        fetchModel(editItem.brandId);
+      } 
+
+      if (editItem.state) {
+        handleStateChange(editItem.state);
+      }
+
+      if (editItem.stat && editItem.city) {
+        handleCityChange( editItem.state ,editItem.city);
+      }
+      } else {
+        fetchMobileData();
+      }
   }, [isEditMode, productId, editItem]);
 
   const updateField = (field, value) => {
@@ -441,11 +505,21 @@ export default function SellMobileForm({ productId }) {
       setCreating(true);
 
       const payload = {
-        ...form,
+        title: form.title,
+        description: form.description,
+        modelId: Number(form.modelId),
+        color: form.color,
         price: Number(form.price),
         yearOfPurchase: Number(form.yearOfPurchase),
+        negotiable: form.negotiable,
+        condition: form.condition,
+        state: form.state,
+        city: form.city,
+        address: form.address,
         sellerId,
       };
+
+      console.log("Submiting payload :", payload);
 
       if (isEditMode && productId) {
         // UPDATE MODE
@@ -512,7 +586,7 @@ export default function SellMobileForm({ productId }) {
     }
   };
 
-  if (loading) {
+  if (loading){
     return (
       <div className="container mx-auto px-5 py-6">
         <p>Loading mobile data...</p>
@@ -544,13 +618,6 @@ export default function SellMobileForm({ productId }) {
           required
         />
 
-        {/* <Input
-          label="Brand"
-          value={form.brand}
-          onChange={(e) => updateField("brand", e.target.value)}
-          required
-        /> */}
-
         <div className="flex flex-col">
           <label className="text-sm font-semibold mb-1">
             Select Brand
@@ -558,8 +625,11 @@ export default function SellMobileForm({ productId }) {
           <select
             value={form.brand}
             onChange={(e) =>{
-              const brandId = e.target.value
-              updateField("brand", brandId)
+              const brandId = e.target.value;
+              updateField("brand", brandId); 
+              updateField("modelId","");
+              setModels([])
+
               fetchModel(brandId)
             }}
             required
@@ -573,13 +643,6 @@ export default function SellMobileForm({ productId }) {
             ))}
           </select>
         </div>
-
-        {/* <Input
-          label="Model"
-          value={form.model}
-          onChange={(e) => updateField("model", e.target.value)}
-          required
-        /> */}
         
         <div className="flex flex-col">
           <label className="text-sm font-semibold mb-1">
@@ -587,8 +650,8 @@ export default function SellMobileForm({ productId }) {
           </label>
           <select
             label="Model"
-            value={form.model}
-            onChange={(e) => updateField("model", e.target.value)}
+            value={form.modelId}
+            onChange={(e) => updateField("modelId", e.target.value)}
             required
             className="border p-2 rounded border-black"
           >
@@ -606,6 +669,7 @@ export default function SellMobileForm({ productId }) {
           value={form.color}
           onChange={(e) => updateField("color", e.target.value)}
         />
+        
         <Input
           label="Year of Purchase"
           type="number"
@@ -643,6 +707,51 @@ export default function SellMobileForm({ productId }) {
             className="w-full border rounded p-2"
             rows={4}
           />
+        </div>
+
+         {/* 📍 LOCATION */}
+        <div className="col-span-2 mt-4 border-t pt-4">
+          <h2 className="text-lg font-bold mb-2">Confirm Your Location</h2>
+
+          <div className="grid grid-cols-3 gap-4">
+            <select
+              value={form.state}
+              onChange={(e) => {
+                updateField("state", e.target.value);
+                handleStateChange(e.target.value);
+              }}
+              className="border p-2 rounded ${errors[name] border-gray-300"
+            >
+              <option value="">Select State</option>
+              {states.map((state) => <option key={state} value={state}>{state}</option>)}
+            </select>
+
+            <select
+              value={form.city}
+              onChange={(e)=>{
+                updateField("city", e.target.value);
+                handleCityChange(form.state, e.target.value)
+              }}
+              className="border p-2 rounded ${errors[name] border-gray-300"
+            >
+              <option value="">Select City</option>
+              {cities.map((city) => <option key={city} value={city}>{city}</option>)}
+            </select>
+
+            <select
+              value={form.address}
+              onChange={(e) => updateField("address", e.target.value)}
+              className="border p-2 rounded ${errors[name] border-gray-300"
+            >
+              <option value="">Locality</option>
+              {localities.map((locality) => (
+                <option key={locality} value={locality}>
+                  {locality}
+                </option>
+              ))}
+            </select>
+            
+          </div>
         </div>
 
         <button
