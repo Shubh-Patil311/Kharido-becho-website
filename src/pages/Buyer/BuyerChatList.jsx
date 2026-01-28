@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import BuyerChatInterface from "../../components/Chat/BuyerChatInterface";
-import MobileChatInterface from "../../components/Chat/MobileChatInterface";
+
+ 
+import BuyerChatThread from "./BuyerChatThread";
+
 
 import { getBookingsForBuyer } from "../../store/services/bikeBookingServices";
 import { getMobileRequestsByBuyer } from "../../store/services/mobileRequestServices";
@@ -176,42 +178,26 @@ const BuyerChatList = () => {
             </div>
           </div>
 
-          {/* RIGHT SIDE: CHAT */}
-          <div className={`lg:col-span-7 xl:col-span-8 sticky top-[16rem] md:top-[12.5rem] lg:top-[14rem] h-[calc(100vh-240px)] ${!selectedChat ? 'hidden lg:flex' : 'flex'} flex-col`}>
-            {selectedChat ? (
-              <div className="flex-1 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden flex flex-col">
-                {activeTab === "MOBILE" ? (
-                  <MobileChatInterface
-                    requestId={selectedChat.bookingId}
-                    senderType="BUYER"
-                    bookingStatus={selectedChat.status}
-                    onClose={() => setSelectedChat(null)}
-                    isEmbedded={true}
-                    useSocketIO={true}
-                  />
-                ) : (
-                  <BuyerChatInterface
-                    bookingId={selectedChat.bookingId}
-                    chatType={activeTab}
-                    bookingStatus={selectedChat.status}
-                    onClose={() => setSelectedChat(null)}
-                    isEmbedded={true}
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="flex-1 bg-white rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center p-12 text-center text-gray-400">
-                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-gray-600 mb-2">Select a Conversation</h3>
-                <p className="max-w-xs text-sm">
-                  Click on any request on the left to view the messages and chat with the seller.
-                </p>
-              </div>
-            )}
+ 
+        ) : (
+          <div className="space-y-3">
+            {chats.map((chat) => (
+              <ChatListItem
+                key={chat.bookingId}
+                title={chat.title}
+                subtitle={`Seller: ${chat.sellerName}`}
+                status={chat.status}
+                tag={activeTab}
+                onClick={() => {
+                  if (activeTab === "LAPTOP") {
+                    navigate(`/chat/laptop/${chat.bookingId}`);
+                  } else {
+                    setSelectedChat(chat);
+                  }
+                }}
+              />
+            ))} 
+ 
           </div>
         </div>
       </div>
